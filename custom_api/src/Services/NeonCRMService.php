@@ -16,7 +16,7 @@ class NeonCRMService
     public function __construct(LoggerInterface $logger)
     {
         $this->client = new Client();
-        $this->apiUrl = 'https://api.neoncrm.com/v2/constituents/';
+        $this->apiUrl = 'https://api.neoncrm.com/v2/accounts/{id}';
         $this->apiKey = getenv('NEONCRM_API_KEY');
         $this->logger = $logger;
     }
