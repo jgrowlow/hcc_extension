@@ -39,21 +39,15 @@ class LoginController
 
         try {
             $body = $request->getParsedBody();
-            $userId = Arr::get($body, 'userId');
-            $this->logger->info('User ID: ' . $userId);
+            $accountId = Arr::get($body, 'accountId');  // We're using accountId now, not userId
+            $this->logger->info('Account ID: ' . $accountId);
 
-            if (!$userId) {
-                throw new ValidationException(['error' => 'User ID is required']);
+            if (!$accountId) {
+                throw new ValidationException(['error' => 'Account ID is required']);
             }
 
-            $email = $this->neonService->getUserEmail($userId);
-            $this->logger->info('Email: ' . $email);
-
-            if (!$email) {
-                return new JsonResponse(['error' => 'No email found for user'], 404);
-            }
-
-            $user = User::where('email', $email)->first();
+            // Directly match the user by accountId (assuming it's stored in Flarum's User table)
+            $user = User::where('neoncrm_account_id', $accountId)->first();  // Assuming you store the NeonCRM account ID in the `neoncrm_account_id` field in your Flarum User model
             $this->logger->info('User: ' . ($user ? $user->id : 'not found'));
 
             if (!$user) {
