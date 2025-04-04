@@ -1,6 +1,7 @@
 <?php
 namespace CustomApi\Controllers;
 
+use CustomApi\Auth\UserAuthenticator; // Add the UserAuthenticator import
 use Flarum\User\User;
 use Flarum\Http\RequestUtil;
 use Illuminate\Support\Arr;
@@ -8,8 +9,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Laminas\Diactoros\Response\JsonResponse;
 use Laminas\Diactoros\Response\RedirectResponse;
 use CustomApi\Services\NeonCRMService;
-use Flarum\User\Authenticator;
-use Flarum\Foundation\ValidationException;
 use Flarum\Http\Middleware\CheckCsrfToken;
 use Psr\Log\LoggerInterface;
 
@@ -19,7 +18,7 @@ class LoginController
     protected $authenticator;
     protected $logger;
 
-    public function __construct(NeonCRMService $neonService, Authenticator $authenticator, LoggerInterface $logger)
+    public function __construct(NeonCRMService $neonService, UserAuthenticator $authenticator, LoggerInterface $logger)
     {
         $this->neonService = $neonService;
         $this->authenticator = $authenticator;
@@ -39,16 +38,15 @@ class LoginController
 
         try {
             $body = $request->getParsedBody();
-            $accountId = Arr::get($body, 'accountId');  // We're using accountId now, not userId
+            $accountId = Arr::get($body, 'accountId');
             $this->logger->info('Account ID: ' . $accountId);
 
             if (!$accountId) {
                 throw new ValidationException(['error' => 'Account ID is required']);
             }
 
-            // Directly match the user by accountId (assuming it's stored in Flarum's User table)
-            $user = User::where('neoncrm_account_id', $accountId)->first();  // Assuming you store the NeonCRM account ID in the `neoncrm_account_id` field in your Flarum User model
-            $this->logger->info('User: ' . ($user ? $user->id : 'not found'));
+            // Use the UserAuthenticator to match the accountId
+            $user = $this->authenticator->authenticate($accountId);
 
             if (!$user) {
                 return new JsonResponse(['error' => 'User not found in forum'], 404);
